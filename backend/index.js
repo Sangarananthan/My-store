@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 
 // Utils
 import { connectDb } from "./config/db.js";
-
+import userRouter from "./router/userRoutes.js";
 dotenv.config();
 const port = process.env.PORT || 5000;
 
@@ -18,8 +18,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.get("/", (req, res) => {
-  res.send("backend is working");
-});
+app.use("/api/users", userRouter);
 
 app.listen(port, () => console.log(`server running on port ${port}`));
