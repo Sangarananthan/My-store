@@ -1,8 +1,9 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 
-const connectDb = async () => {
+export const connectDb = async () => {
   try {
-    await mongoose.connect();
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("DataBase connected baby..");
   } catch (error) {
     console.log(`Error : ${error.message}`);
     process.exit(1);
