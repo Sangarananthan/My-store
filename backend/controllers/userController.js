@@ -167,8 +167,8 @@ const updateUserByid = asyncHandler(async (req, res) => {
     user.username = req.body.username || user.username;
     user.email = req.body.email || user.email;
     user.isAdmin = Boolean(req.body.isAdmin);
-    const updateduser = await user.save();
-    res.json(updateduser);
+    await user.save();
+    res.json(user);
   } else {
     res.status(400);
     throw new Error("Invalid user ID");
