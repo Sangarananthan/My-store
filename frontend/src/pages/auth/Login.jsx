@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLoginMutation } from "../../redux/api/userApiSlice";
 import { setCredentials } from "../../redux/features/auth/authSlice";
 import { toast } from "react-toastify";
-import Loader from "./Loader";
+import Loader from "../../components/Loader";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -33,7 +33,7 @@ const Login = () => {
       const res = await login({ email, password }).unwrap();
       console.log(res);
       dispatch(setCredentials({ ...res }));
-      toast.done("login success");
+      toast.success("login success");
     } catch (error) {
       toast.error(error?.data?.message || error.message);
     }
@@ -55,7 +55,7 @@ const Login = () => {
                 type="email"
                 id="
               email"
-                className="mt-1 p-2 border rounded w-full"
+                className="mt-1 p-2 border rounded w-full  bg-slate-200"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -71,7 +71,7 @@ const Login = () => {
                 type="password"
                 id="
               password"
-                className="mt-1 p-2 border rounded w-full"
+                className="mt-1 p-2 border rounded w-full  bg-slate-200"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

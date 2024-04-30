@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { useLogoutMutation } from "../../redux/api/userApiSlice";
 import { logout } from "../../redux/features/auth/authSlice";
+import { toast } from "react-toastify";
 import "./Navigation.css";
 const Navigation = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -38,8 +39,9 @@ const Navigation = () => {
       await logoutApiCall().unwrap();
       dispatch(logout());
       navigate("/login");
+      toast.success("Logged out");
     } catch (error) {
-      console.error(error);
+      toast.error(error?.data?.message || error.message);
     }
   };
 

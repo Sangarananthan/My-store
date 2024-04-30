@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import Loader from "./Loader";
+import Loader from "../../components/Loader";
 import { setCredentials } from "../../redux/features/auth/authSlice";
 import { toast } from "react-toastify";
 import { useRegisterMutation } from "../../redux/api/userApiSlice";
@@ -37,8 +37,7 @@ const Register = () => {
         navigate(redirect);
         toast.success("User Registration Succesfull");
       } catch (error) {
-        console.error(error);
-        toast.error(error.data.message || error);
+        toast.error(error?.data?.message || error.message);
       }
     }
   };
@@ -58,7 +57,7 @@ const Register = () => {
             <input
               type="text"
               id="name"
-              className="mt-1 p-2 border rounded w-full"
+              className="mt-1 p-2 border rounded w-full  bg-slate-200"
               placeholder="Enter name"
               value={username}
               onChange={(e) => setusername(e.target.value)}
@@ -74,7 +73,7 @@ const Register = () => {
             <input
               type="email"
               id="email"
-              className="mt-1 p-2 border rounded w-full"
+              className="mt-1 p-2 border rounded w-full  bg-slate-200"
               placeholder="Enter email"
               value={email}
               onChange={(e) => setemail(e.target.value)}
@@ -90,7 +89,7 @@ const Register = () => {
             <input
               type="password"
               id="password"
-              className="mt-1 p-2 border rounded w-full"
+              className="mt-1 p-2 border rounded w-full  bg-slate-200"
               placeholder="Enter password"
               value={password}
               onChange={(e) => setpassword(e.target.value)}
@@ -106,7 +105,7 @@ const Register = () => {
             <input
               type="password"
               id="confirmPassword"
-              className="mt-1 p-2 border rounded w-full"
+              className="mt-1 p-2 border rounded w-full  bg-slate-200"
               placeholder="Re-enter password"
               value={confirmPassword}
               onChange={(e) => setconfirmPassword(e.target.value)}

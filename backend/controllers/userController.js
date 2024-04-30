@@ -8,12 +8,13 @@ const createUser = asyncHandler(async (req, res) => {
   // Destructure Body
   const { username, email, password } = req.body;
   if (!username || !email || !password) {
-    throw new Error("Please fill all Credentials 🪪");
+    throw new Error("Please fill all Credentials");
   }
   //   Check for existing user
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    res.status(400).send("User already Exist continue Login :)");
+    res.status(400);
+    throw new Error("User Already Registered");
   }
   // Create new User Model
   const salt = await bcrypt.genSalt(10);
@@ -67,7 +68,7 @@ const logoutCurrentUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     expires: new Date(0),
   });
-  res.status(200).json({ message: "Logged out succesfully :)" });
+  return res.status(200).json({ message: "Logged out succesfully :)" });
 });
 
 // GET ALL USERS
@@ -99,33 +100,46 @@ const getCurrentprofile = asyncHandler(async (req, res) => {
 
 //UPDATE CURRENT PROFILE
 const updateCurrentprofile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
-  if (user) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      res.status(400);
+      throw new Error("User not Registered");
+    }
+
     user.username = req.body.username || user.username;
     user.email = req.body.email || user.email;
-    if (req.body.password && req.body.oldPassword) {
+
+    if (req.body.password || req.body.oldPassword) {
+      if (!req.body.password || !req.body.oldPassword) {
+        return res.status(400).json({ message: "Coudn't update password" });
+      }
       const isPasswordValid = await bcrypt.compare(
         req.body.oldPassword,
         user.password
       );
+
       if (isPasswordValid) {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(req.body.password, salt);
         user.password = hashedPassword;
       } else {
-        res.status(400);
-        throw new Error("Enter your old password correctly");
+        return res
+          .status(400)
+          .json({ message: "Enter your Current password correctly" });
       }
     }
+
     await user.save(); // Await the save operation
     res.status(200).json({
       message: "Profile updated successfully",
       username: user.username,
       email: user.email,
-      isAdmin: user.isAdmin, // Corrected: IsAdmin to isAdmin
+      isAdmin: user.isAdmin,
     });
-  } else {
-    res.status(404).json({ message: "User not found" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
