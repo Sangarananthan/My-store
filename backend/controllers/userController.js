@@ -148,17 +148,17 @@ const deleteUserbyId = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const user = await User.findById(id);
   if (!user) {
-    return res.status(400).send("User not found");
+    return res.status(400).json({ message: "User not found" });
   }
   try {
     if (user.isAdmin) {
-      return res.status(400).send("Admins can't be deleted 😎");
+      return res.status(400).json({ message: "Admins can't be deleted 😎" });
     } else {
       await User.deleteOne({ _id: user._id });
       return res.status(200).send(`${user.username} deleted successfully`);
     }
   } catch (error) {
-    return res.status(400).send("Error in deleting User " + error);
+    return res.status(400).json({ message: "Error in deleting User " + error });
   }
 });
 

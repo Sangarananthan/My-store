@@ -45,7 +45,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 mt-[5rem]">
+    <div className="container mx-auto p-4 mt-[2rem]">
       <div className="flex justify-center align-center md:flex md:space-x-4">
         <div className="w-[40rem]">
           <h2 className="text-2xl font-semibold mb-4 text-black">
