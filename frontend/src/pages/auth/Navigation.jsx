@@ -6,7 +6,7 @@ import {
   AiOutlineUserAdd,
   AiOutlineShoppingCart,
 } from "react-icons/ai";
-import { FaHeart } from "react-icons/fa";
+import { FaHeart, FaList, FaUser } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -89,33 +89,17 @@ const Navigation = () => {
           className="flex items-center text-white focus:outline-none"
         >
           {userInfo ? (
-            <span className="text-white">{userInfo.username}</span>
+            <div className="flex flex-row w-full justify-between items-center">
+              {userInfo.isAdmin ? <FaUser size={20} /> : <></>}
+              <h2 className="hidden nav-item-name ml-2">{userInfo.username}</h2>
+            </div>
           ) : (
             <></>
-          )}
-
-          {userInfo && (
-            <svg
-              xmlns="https://www.w3.org/TR/SVG"
-              className={`h-4 w-4 ml-1 ${
-                dropDownOpen ? "transform rotate-180" : ""
-              }`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="white"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d={dropDownOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
-              />
-            </svg>
           )}
         </button>
         {dropDownOpen && userInfo && (
           <ul
-            className={`absolute right-0 mt-2 mr-14 space-y-2 bg-white text-gray-600 ${
+            className={`absolute right-0 mt-2 mr-14 space-y-2 bg-gray-900 text-white rounded-lg text-semibold ${
               !userInfo.isAdmin ? "-top-20" : "-top-80"
             }`}
           >
@@ -124,7 +108,7 @@ const Navigation = () => {
                 <li>
                   <Link
                     to="/admin/dashboard"
-                    className="block px-4 py-2 hover:bg--gray-100 "
+                    className="block px-4 py-2 hover:bg-gray-400 rounded-lg "
                   >
                     Dashboard
                   </Link>
@@ -132,31 +116,31 @@ const Navigation = () => {
                 <li>
                   <Link
                     to="/admin/productlist"
-                    className="block px-4 py-2 hover:bg--gray-100 "
+                    className="block px-4 py-2  hover:bg-gray-400 rounded-lg  "
                   >
                     Products
                   </Link>
                 </li>{" "}
                 <li>
                   <Link
-                    to="/admin/orderlist"
-                    className="block px-4 py-2 hover:bg--gray-100 "
+                    to="/admin/categorylist"
+                    className="block px-4 py-2  hover:bg-gray-400 rounded-lg "
                   >
-                    Orders
+                    Category
                   </Link>
                 </li>{" "}
                 <li>
                   <Link
                     to="/admin/userlist"
-                    className="block px-4 py-2 hover:bg--gray-100 "
+                    className="block px-4 py-2  hover:bg-gray-400 rounded-lg"
                   >
                     Users
                   </Link>
                 </li>{" "}
                 <li>
                   <Link
-                    to="/admin/orderlist"
-                    className="block px-4 py-2 hover:bg--gray-100 "
+                    to="/admin/list"
+                    className="block px-4 py-2  hover:bg-gray-400 rounded-lg "
                   >
                     Orders
                   </Link>
@@ -166,7 +150,7 @@ const Navigation = () => {
             <li>
               <Link
                 to="/profile"
-                className="block px-4 py-2 hover:bg--gray-100 "
+                className="block px-4 py-2  hover:bg-gray-400 rounded-lg"
               >
                 Profile
               </Link>
@@ -174,7 +158,7 @@ const Navigation = () => {
             <li>
               <button
                 onClick={logoutHandler}
-                className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+                className="block w-full px-4 py-2 text-left hover:bg-gray-400 rounded-lg"
               >
                 Logout
               </button>
