@@ -15,7 +15,7 @@ const ProductList = () => {
   const [category, setcategory] = useState("");
   const [quantity, setquantity] = useState("");
   const [brand, setbrand] = useState("");
-  const [stock, setstock] = useState(0);
+  const [countInStock, setcountInStock] = useState(0);
   const [imageUrl, setimageUrl] = useState("");
   const navigate = useNavigate();
   const [uploadProductImage] = useUploadProductImageMutation();
@@ -36,7 +36,30 @@ const ProductList = () => {
     }
   };
 
-  const handleSubmit = () => {};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const productData = new FormData();
+      productData.append("image", image);
+      productData.append("name", name);
+      productData.append("description", description);
+      productData.append("price", price);
+      productData.append("category", category);
+      productData.append("quantity", quantity);
+      productData.append("brand", brand);
+      productData.append("countInStock", countInStock);
+      const { data } = await createProduct(productData);
+      console.log(data);
+      if (data.error) {
+        toast.error("Product create failed");
+      } else {
+        toast.success(`${data.name} is created`);
+        navigate("/");
+      }
+    } catch (error) {
+      toast.error(error?.data?.message || error.error);
+    }
+  };
   return (
     <div className="container xl:mx-[9rem] sm:mx-[0]">
       <div className="flex fle-col md:flex-row">
@@ -125,8 +148,8 @@ const ProductList = () => {
                 <input
                   type="text"
                   className="p-4 mb-3 w-[30rem] border rounded-lg "
-                  value={stock}
-                  onChange={(e) => setstock(e.target.value)}
+                  value={countInStock}
+                  onChange={(e) => setcountInStock(e.target.value)}
                 ></input>
               </div>
               <div>
