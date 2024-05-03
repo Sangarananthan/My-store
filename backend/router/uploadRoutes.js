@@ -1,6 +1,7 @@
 import path from "path";
 import express from "express";
 import multer from "multer";
+
 const router = express.Router();
 
 const storage = multer.diskStorage({
@@ -9,7 +10,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const extname = path.extname(file.originalname);
-    cb(null, `${file.originalname}-${Date.now()}${extname}`);
+    cb(null, `${file.fieldname}-${Date.now()}${extname}`);
   },
 });
 
