@@ -6,6 +6,7 @@ import {
 } from "../../redux/api/productApiSlice";
 import { useListCategoryQuery } from "../../redux/api/categorySlice";
 import { toast } from "react-toastify";
+import Admin_Menu from "./Admin_Menu";
 
 const ProductList = () => {
   const [image, setimage] = useState("");
@@ -63,7 +64,7 @@ const ProductList = () => {
   return (
     <div className="container xl:mx-[9rem] sm:mx-[0]">
       <div className="flex fle-col md:flex-row">
-        {/* Admin menu */}
+        <Admin_Menu />
         <div className="md:w-3/4 p-3">
           <div className="h-12">Create Product</div>
           {imageUrl && (
@@ -156,10 +157,12 @@ const ProductList = () => {
                 <label>Category</label>
                 <br />
                 <select
-                  aria-placeholder="Choose Category"
                   className="p-4 mb-3 w-[30rem] border rounded-lg "
                   onChange={(e) => setcategory(e.target.value)}
                 >
+                  <option value="" disabled defaultValue>
+                    Choose Category
+                  </option>
                   {categories &&
                     categories.map((c) => (
                       <option key={c._id} value={c._id}>
