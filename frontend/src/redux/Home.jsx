@@ -9,7 +9,8 @@ const Home = () => {
   const { data, isLoading, isError } = useGetProductsQuery({ keyword });
 
   return (
-    <div>
+    <div className="ml-[5rem]">
+      <>HOME</>
       {!keyword ? <Header></Header> : null}
       {isLoading ? (
         <Loader />
