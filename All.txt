@@ -1,0 +1,1823 @@
+import mongoose from "mongoose";
+
+export const connectDb = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("DataBase connected baby..");
+  } catch (error) {
+    console.log(`Error : ${error.message}`);
+    process.exit(1);
+  }
+};
+import Category from "../models/categoryModel.js";
+import asyncHandler from "../middleware/asyncHandler.js";
+
+// Creating new category
+const createCategory = asyncHandler(async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.json({ error: "Name is Required" });
+    }
+    const existingCategory = await Category.findOne({ name });
+    if (existingCategory) {
+      return res.json("Already Exists");
+    }
+    const category = new Category({ name });
+    await category.save();
+    res.json(category);
+  } catch (error) {
+    return res.status(400).json(error);
+  }
+});
+
+// Updating Existing category using ID
+const updateCategory = asyncHandler(async (req, res) => {
+  try {
+    const { name } = req.body;
+    const { categoryId } = req.params;
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(400).json({ error: "Category ID invalid" });
+    }
+    category.name = name;
+    const updatedCatogery = await category.save();
+    res.json(updatedCatogery);
+  } catch (error) {
+    return res.status(400).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete category using ID
+const removeCategory = asyncHandler(async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+    await Category.deleteOne({ _id: categoryId });
+    res.status(200).json({ message: ` deleted succesfully` });
+  } catch (error) {
+    return res.status(400).json({ error: "Category not found" });
+  }
+});
+
+const listCategory = asyncHandler(async (req, res) => {
+  try {
+    const all = await Category.find({});
+    return res.json(all);
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json(error.message);
+  }
+});
+
+const readCategory = asyncHandler(async (req, res) => {
+  try {
+    const category = await Category.findOne({ _id: req.params.id });
+    res.json(category);
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json(error.message);
+  }
+});
+
+// EXPORT
+export {
+  createCategory,
+  updateCategory,
+  removeCategory,
+  listCategory,
+  readCategory,
+};
+import asyncHandler from "../middleware/asyncHandler.js";
+import Product from "../models/ProductModal.js";
+
+// ADD PRODUCT
+const addProduct = asyncHandler(async (req, res) => {
+  try {
+    const { name, description, price, category, quantity, brand } = req.fields;
+    switch (true) {
+      case !name:
+        return res.json({ error: "Name is required" });
+      case !description:
+        return res.json({ error: "Description is required" });
+      case !price:
+        return res.json({ error: "Price is required" });
+      case !category:
+        return res.json({ error: "Category is required" });
+      case !quantity:
+        return res.json({ error: "Quantity is required" });
+      case !brand:
+        return res.json({ error: "Brand is required" });
+    }
+    const product = new Product({ ...req.fields });
+    await product.save();
+    res.json(product);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json(error.message);
+  }
+});
+
+// UPDATE PRODUCT BY ID
+const updateProductDetails = asyncHandler(async (req, res) => {
+  try {
+    const { name, description, price, category, quantity, brand } = req.fields;
+    switch (true) {
+      case !name:
+        return res.json({ error: "Name is required" });
+      case !description:
+        return res.json({ error: "Description is required" });
+      case !price:
+        return res.json({ error: "Price is required" });
+      case !category:
+        return res.json({ error: "Category is required" });
+      case !quantity:
+        return res.json({ error: "Quantity is required" });
+      case !brand:
+        return res.json({ error: "Brand is required" });
+    }
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...req.fields,
+      },
+      { new: true }
+    );
+    res.json(product);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json(error.message);
+  }
+});
+
+// REMOVE PRODUCT
+const removeProduct = asyncHandler(async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    res.json(product);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json(error.message);
+  }
+});
+
+// GET ALL PRODUCTS
+const fetchProducts = asyncHandler(async (req, res) => {
+  try {
+    const pageSize = 6;
+    const keyword = req.query.keyword
+      ? { name: { $regex: req.query.keyword, $options: "i" } }
+      : {};
+    const count = await Product.countDocuments({ ...keyword });
+    const products = await Product.find({ ...keyword }).limit(pageSize);
+    const pages = Math.ceil(count / pageSize);
+    res.json({
+      products,
+      page: 1,
+      pages: pages,
+      hasMore: pages > 1 ? true : false,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json(error.message);
+  }
+});
+
+// FETCH BY ID
+const fetchById = asyncHandler(async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (product) {
+      res.json(product);
+    } else {
+      res.status(400);
+      throw new Error("Product Not found");
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(400).json(error.message);
+  }
+});
+
+// GET ALL PRODUCTS
+const fetchAllProducts = asyncHandler(async (req, res) => {
+  try {
+    const products = await Product.find({})
+      .populate("category")
+      .limit(12)
+      .sort({ createdAt: -1 });
+    res.json(products);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json(error.message);
+  }
+});
+
+// POST reviews
+const addProductReview = asyncHandler(async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const product = await Product.findById(req.params.id);
+    if (product) {
+      const alreadyReviewed = product.reviews.find(
+        (r) => r.user.toString() === req.user._id.toString()
+      );
+      if (alreadyReviewed) {
+        res.status(400);
+        throw new Error("Already reviewed");
+      }
+      const review = {
+        name: req.user.username,
+        rating: Number(rating),
+        comment,
+        user: req.user._id,
+      };
+      product.reviews.push(review);
+      product.numReviews = product.reviews.length;
+
+      product.rating =
+        product.reviews.reduce((acc, item) => item.rating + acc, 0) /
+        product.reviews.length;
+
+      await product.save();
+      res.status(201).json({ message: "Review Added" });
+    } else {
+      res.status(404);
+      throw new Error("product Not Found");
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(400).json(error.message);
+  }
+});
+
+// Fetch Top products
+const fetchTopProducts = asyncHandler(async (req, res) => {
+  try {
+    const products = await Product.find({}).sort({ rating: -1 }).limit(4);
+    res.json(products);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json(error.message);
+  }
+});
+
+// FETCH NEW PRODUCTS
+const fetchNewProducts = asyncHandler(async (req, res) => {
+  try {
+    const products = await Product.find({}).sort({ createdAt: -1 }).limit(4);
+    res.json(products);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json(error.message);
+  }
+});
+// Export
+export {
+  addProduct,
+  updateProductDetails,
+  removeProduct,
+  fetchProducts,
+  fetchById,
+  fetchAllProducts,
+  addProductReview,
+  fetchTopProducts,
+  fetchNewProducts,
+};
+import User from "../models/userModel.js";
+import asyncHandler from "../middleware/asyncHandler.js";
+import bcrypt from "bcryptjs";
+import createTokens from "../utils/createTokens.js";
+
+// CREATING USER
+const createUser = asyncHandler(async (req, res) => {
+  // Destructure Body
+  const { username, email, password } = req.body;
+  if (!username || !email || !password) {
+    throw new Error("Please fill all Credentials");
+  }
+  //   Check for existing user
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    res.status(400);
+    throw new Error("User Already Registered");
+  }
+  // Create new User Model
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+  const newUser = new User({ username, email, password: hashedPassword });
+  try {
+    await newUser.save();
+    createTokens(res, newUser._id);
+    res.status(200).json({
+      message: "User Created Succesfully",
+      username,
+      email,
+      isAdmin: newUser.isAdmin,
+    });
+  } catch (error) {
+    res.status(400);
+    throw new Error("Invalid User Data");
+  }
+});
+
+// LOGING IN USER
+const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  const validUser = await User.findOne({ email });
+  if (!validUser) {
+    res.status(400);
+    throw new Error("User not Registered");
+  }
+  const isPassword = await bcrypt.compare(password, validUser.password);
+  if (!isPassword) {
+    res.status(400);
+    throw new Error("Enter correct Password :(");
+  }
+
+  try {
+    createTokens(res, validUser._id);
+    res.status(200).json({
+      message: "Login Succesfully :)",
+      username: validUser.username,
+      email,
+      isAdmin: validUser.isAdmin,
+    });
+  } catch (error) {
+    res.status(400).send("Server Error");
+  }
+});
+
+// LOGOUT USER
+const logoutCurrentUser = asyncHandler(async (req, res) => {
+  res.cookie("jwt", "", {
+    httpOnly: true,
+    expires: new Date(0),
+  });
+  return res.status(200).json({ message: "Logged out succesfully :)" });
+});
+
+// GET ALL USERS
+const getAllUsers = asyncHandler(async (req, res) => {
+  const users = await User.find({});
+  try {
+    res.json(users);
+  } catch (error) {
+    res.status(400);
+    throw new Error("No users Found");
+  }
+});
+
+// GET CURRENT PROFILE
+const getCurrentprofile = asyncHandler(async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+    res.json({
+      username: req.user.username,
+      email: req.user.email,
+      isAdmin: req.user.isAdmin,
+    });
+  } catch (error) {
+    throw new Error(`Error occurred in fetching Profile info ${error}`);
+  }
+});
+
+//UPDATE CURRENT PROFILE
+const updateCurrentprofile = asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      res.status(400);
+      throw new Error("User not Registered");
+    }
+
+    user.username = req.body.username || user.username;
+    user.email = req.body.email || user.email;
+
+    if (req.body.password || req.body.oldPassword) {
+      if (!req.body.password || !req.body.oldPassword) {
+        return res.status(400).json({ message: "Coudn't update password" });
+      }
+      const isPasswordValid = await bcrypt.compare(
+        req.body.oldPassword,
+        user.password
+      );
+
+      if (isPasswordValid) {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(req.body.password, salt);
+        user.password = hashedPassword;
+      } else {
+        return res
+          .status(400)
+          .json({ message: "Enter your Current password correctly" });
+      }
+    }
+
+    await user.save(); // Await the save operation
+    res.status(200).json({
+      message: "Profile updated successfully",
+      username: user.username,
+      email: user.email,
+      isAdmin: user.isAdmin,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+// DELETE USER BY ID
+const deleteUserbyId = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user = await User.findById(id);
+  if (!user) {
+    return res.status(400).json({ message: "User not found" });
+  }
+  try {
+    if (user.isAdmin) {
+      return res.status(400).json({ message: "Admins can't be deleted 😎" });
+    } else {
+      await User.deleteOne({ _id: user._id });
+      return res.status(200).send(`${user.username} deleted successfully`);
+    }
+  } catch (error) {
+    return res.status(400).json({ message: "Error in deleting User " + error });
+  }
+});
+
+// GET USER BY ID
+const getUserByID = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id).select("-password");
+  if (user) {
+    res.status(200).json(user);
+  } else {
+    res.status(400);
+    throw new Error("User not Found");
+  }
+});
+
+// UPDATE USER BY ID
+const updateUserByid = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  console.log(user);
+  if (user) {
+    user.username = req.body.username || user.username;
+    user.email = req.body.email || user.email;
+    user.isAdmin = Boolean(req.body.isAdmin);
+    await user.save();
+    res.json(user);
+  } else {
+    res.status(400);
+    throw new Error("Invalid user ID");
+  }
+});
+
+// Exporting all controllers
+export {
+  createUser,
+  loginUser,
+  logoutCurrentUser,
+  getAllUsers,
+  getCurrentprofile,
+  updateCurrentprofile,
+  deleteUserbyId,
+  getUserByID,
+  updateUserByid,
+};
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch((error) =>
+    res.status(500).json({ message: error.message })
+  );
+};
+export default asyncHandler;
+import jwt from "jsonwebtoken";
+import User from "../models/userModel.js";
+import asyncHandler from "./asyncHandler.js";
+
+// Check for authenticated user
+const authenticate = asyncHandler(async (req, res, next) => {
+  let token;
+
+  //   Read jwt from JWT cookie
+  token = req.cookies.jwt;
+  if (token) {
+    try {
+      const decode = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decode.userId).select("-password");
+      next();
+    } catch (error) {
+      res.status(401);
+      throw new Error("Not authenticated , token Failed");
+    }
+  } else {
+    res.status(401);
+    throw new Error("Login First");
+  }
+});
+
+// Check if Admin
+const authorisedAdmin = asyncHandler(async (req, res, next) => {
+  if (req.user && req.user.isAdmin) {
+    next();
+  } else {
+    res.status(401);
+    throw new Error("User not Authorised as an Admin");
+  }
+});
+
+export { authenticate, authorisedAdmin };import { isValidObjectId } from "mongoose";
+function checkID(req, res, next) {
+  if (!isValidObjectId(req.params.id)) {
+    res.status(400);
+    throw new Error(`Invalid Object ID ${req.params.id}`);
+  }
+  next();
+}
+export default checkID;
+import mongoose, { trusted } from "mongoose";
+
+export const categoryShema = new mongoose.Schema({
+  name: {
+    type: String,
+    trim: true,
+    required: true,
+    maxLength: 32,
+    unique: true,
+  },
+});
+
+const Category = mongoose.model("Category", categoryShema);
+export default Category;
+import mongoose from "mongoose";
+const { ObjectId } = mongoose.Schema;
+
+// reviewSchema
+const reviewSchema = mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    rating: {
+      type: Number,
+      required: true,
+    },
+    comment: {
+      type: String,
+      required: true,
+    },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
+  },
+  { timestamps: true }
+);
+
+// Product Schema
+const productSchema = mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    image: {
+      type: String,
+      required: true,
+    },
+    brand: {
+      type: String,
+      required: true,
+    },
+    quantity: {
+      type: Number,
+      required: true,
+    },
+    category: {
+      type: ObjectId,
+      ref: "Category",
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    reviews: [reviewSchema],
+    rating: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    numReviews: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    price: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    countInStock: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+  },
+  { timestamps: true }
+);
+
+const Product = mongoose.model("Product", productSchema);
+export default Product;
+import { timeStamp } from "console";
+import mongoose from "mongoose";
+
+export const userSchema = mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    isAdmin: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+  },
+  { timeStamp: true }
+);
+
+const User = mongoose.model("User", userSchema);
+
+export default User;
+import express from "express";
+import { authenticate, authorisedAdmin } from "../middleware/authMiddleware.js";
+import {
+  createCategory,
+  updateCategory,
+  removeCategory,
+  listCategory,
+  readCategory,
+} from "../controllers/categoryController.js";
+const router = express.Router();
+router.route("/").post(authenticate, authorisedAdmin, createCategory);
+router
+  .route("/:categoryId")
+  .put(authenticate, authorisedAdmin, updateCategory)
+  .delete(authenticate, authorisedAdmin, removeCategory);
+router.route("/list").get(listCategory);
+router.route("/:id").get(readCategory);
+export default router;
+import express from "express";
+import formidable from "express-formidable";
+import { authenticate, authorisedAdmin } from "../middleware/authMiddleware.js";
+import checkID from "../middleware/checkID.js";
+import {
+  addProduct,
+  updateProductDetails,
+  removeProduct,
+  fetchProducts,
+  fetchById,
+  fetchAllProducts,
+  addProductReview,
+  fetchTopProducts,
+  fetchNewProducts,
+} from "../controllers/productController.js";
+
+const router = express.Router();
+
+router
+  .route("/")
+  .get(fetchProducts)
+  .post(authenticate, authorisedAdmin, formidable(), addProduct);
+router.route("/allproducts").get(fetchAllProducts);
+
+router.get("/top", fetchTopProducts);
+router.get("/new", fetchNewProducts);
+router
+  .route("/:id")
+  .get(fetchById)
+  .put(authenticate, authorisedAdmin, formidable(), updateProductDetails)
+  .delete(authenticate, authorisedAdmin, removeProduct);
+
+router
+  .route("/:id/reviews")
+  .post(authenticate, authorisedAdmin, addProductReview);
+
+export default router;
+import path from "path";
+import express from "express";
+import multer from "multer";
+
+const router = express.Router();
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    const extname = path.extname(file.originalname);
+    cb(null, `${file.fieldname}-${Date.now()}${extname}`);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  const filetypes = /jpe?g|png|webp/;
+  const mimetypes = /image\/jpe?g|image\/png|image\/webp/;
+
+  const extname = path.extname(file.originalname).toLowerCase();
+  const mimetype = file.mimetype;
+
+  if (filetypes.test(extname) && mimetypes.test(mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Images only"), false);
+  }
+};
+const upload = multer({ storage, fileFilter });
+const uploadSingleImage = upload.single("image");
+
+router.post("/", (req, res) => {
+  uploadSingleImage(req, res, (err) => {
+    if (err) {
+      res.status(400).send({ message: err.message });
+    } else if (req.file) {
+      res.status(200).send({
+        message: "Image uploaded Succesfully",
+        image: `/${req.file.path}`,
+      });
+    } else {
+      res.status(400).json({ message: "No Image File Provided" });
+    }
+  });
+});
+export default router;
+import express from "express";
+const userRouter = express.Router();
+import {
+  createUser,
+  loginUser,
+  logoutCurrentUser,
+  getAllUsers,
+  getCurrentprofile,
+  updateCurrentprofile,
+  deleteUserbyId,
+  getUserByID,
+  updateUserByid,
+} from "../controllers/userController.js";
+import { authenticate, authorisedAdmin } from "../middleware/authMiddleware.js";
+userRouter
+  .route("/")
+  .post(createUser)
+  .get(authenticate, authorisedAdmin, getAllUsers);
+userRouter.post("/auth", loginUser);
+userRouter.post("/logout", logoutCurrentUser);
+userRouter
+  .route("/profile")
+  .get(authenticate, getCurrentprofile)
+  .put(authenticate, updateCurrentprofile);
+userRouter
+  .route("/:id")
+  .delete(authenticate, authorisedAdmin, deleteUserbyId)
+  .get(authenticate, getUserByID)
+  .put(authenticate, authorisedAdmin, updateUserByid);
+export default userRouter;
+// Packages
+import path from "path";
+import express from "express";
+import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+
+// Utils
+import { connectDb } from "./config/db.js";
+import userRoutes from "./router/userRoutes.js";
+import categoryRoutes from "./router/categoryRoutes.js";
+import productRoutes from "./router/productRoutes.js";
+import uploadRoutes from "./router/uploadRoutes.js";
+dotenv.config();
+const port = process.env.PORT || 5000;
+
+connectDb();
+
+const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+app.use("/api/users", userRoutes);
+app.use("/api/category", categoryRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/upload", uploadRoutes);
+
+const __dirname = path.resolve();
+app.use("/uploads", express.static(path.join(__dirname + "/uploads")));
+app.listen(port, () => console.log(`server running on port ${port}`));
+const Loader = () => {
+  return (
+    <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-opacity-50"></div>
+  );
+};
+
+export default Loader;
+const Messages = ({ variant, children }) => {
+  const getVariantClass = () => {
+    switch (variant) {
+      case "success":
+        return "bg-green-100 text-green-800";
+      case "error":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-blue-100 text-blue-800";
+    }
+  };
+  return <div className={`p-4 rounded ${getVariantClass}`}>{children}</div>;
+};
+
+export default Messages;
+const Modal = ({ isOpen, isClose, children }) => {
+  return (
+    <>
+      {isOpen && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 ">
+          <div className="fixed inset-0 bg-black opacity-50"></div>
+          <div className="absolute top-[40%] right-[50%] bg-white p-4 rounded-lg z-10 text-right">
+            <button
+              className="font-semibold text-black hover:bg-red-600 focus-outline-none mr-2 px-2 rounded-lg hover:text-red-50 items-center"
+              onClick={isClose}
+            >
+              X
+            </button>
+            {children}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default Modal;
+import { Navigate, Outlet } from "react-router";
+import { useSelector } from "react-redux";
+
+const PrivateRoute = () => {
+  const { userInfo } = useSelector((state) => state.auth);
+  return userInfo ? <Outlet /> : <Navigate to={"/login"} replace />;
+};
+
+export default PrivateRoute;
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { useLoginMutation } from "../../redux/api/userApiSlice";
+import { setCredentials } from "../../redux/features/auth/authSlice";
+import { toast } from "react-toastify";
+import Loader from "../../components/Loader";
+
+const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const [login, { isLoading }] = useLoginMutation();
+
+  const { userInfo } = useSelector((state) => state.auth);
+
+  const { search } = useLocation();
+  const sp = new URLSearchParams(search);
+  const redirect = sp.get("redirect") || "/";
+
+  useEffect(() => {
+    if (userInfo) {
+      navigate(redirect);
+    }
+  }, [navigate, redirect, userInfo]);
+
+  const submitHandler = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await login({ email, password }).unwrap();
+      console.log(res);
+      dispatch(setCredentials({ ...res }));
+      toast.success("login success");
+    } catch (error) {
+      toast.error(error?.data?.message || error.message);
+    }
+  };
+  return (
+    <div>
+      <section className="pl-[10rem] flex flex-wrap">
+        <div className="mr-[4rem] mt-[5rem]">
+          <h1 className="text-2xl font-semibold mb-4">Sign In</h1>
+          <form onSubmit={submitHandler} className="container w-[40rem]">
+            <div className="my-[2rem]">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-black"
+              >
+                Email Adress
+              </label>
+              <input
+                type="email"
+                id="
+              email"
+                className="mt-1 p-2 border rounded w-full  bg-slate-200"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>{" "}
+            <div className="my-[2rem]">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-black"
+              >
+                Password
+              </label>
+              <input
+                type="password"
+                id="
+              password"
+                className="mt-1 p-2 border rounded w-full  bg-slate-200"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-pink-500 text-white  px-4 py-2 rounded cursor-pointer my-[1rem]"
+            >
+              {isLoading ? "Signing in.." : "Sign in"}
+            </button>
+            {isLoading ? <Loader /> : <></>}
+          </form>
+          <div className="mt-4">
+            <p className="text-black">
+              New customer?{" "}
+              <Link
+                to={redirect ? `/register?redirect=${redirect}` : "/register"}
+                className="text-pink-600 hover:underline"
+              >
+                Register
+              </Link>
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default Login;
+#navigation-container {
+  width: 4%;
+  transition: width 0.3s ease-in-out;
+  overflow: hidden; /* Hide overflowing content during transition */
+}
+
+#navigation-container:hover {
+  width: 15%;
+}
+
+/* Initially hide nav-item-name */
+.nav-item-name {
+  display: none;
+  transition: opacity 0.2s ease-in-out; /* Add opacity transition */
+}
+
+#navigation-container:hover .nav-item-name {
+  display: block;
+  opacity: 1;
+}
+
+.search-input {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out; /* Add opacity transition */
+}
+
+#navigation-container:hover .search-input {
+  display: block;
+  opacity: 1;
+}
+
+#navigation-container:hover .search-icon {
+  display: none;
+  transition: opacity 0.2s ease-in-out; /* Add opacity transition */
+}
+import { useState } from "react";
+import {
+  AiOutlineHome,
+  AiOutlineShopping,
+  AiOutlineLogin,
+  AiOutlineUserAdd,
+  AiOutlineShoppingCart,
+} from "react-icons/ai";
+import { FaHeart, FaList, FaUser } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { useLogoutMutation } from "../../redux/api/userApiSlice";
+import { logout } from "../../redux/features/auth/authSlice";
+import { toast } from "react-toastify";
+import "./Navigation.css";
+const Navigation = () => {
+  const { userInfo } = useSelector((state) => state.auth);
+  const [dropDownOpen, setdropDown] = useState(false);
+  const [showSidebar, setshowSidebar] = useState(false);
+
+  const toggleDropdown = () => {
+    setdropDown(!dropDownOpen);
+  };
+  const toggleSidebar = () => {
+    setshowSidebar(!showSidebar);
+  };
+
+  const closeSidebar = () => {
+    setshowSidebar(false);
+  };
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const [logoutApiCall] = useLogoutMutation();
+
+  const logoutHandler = async () => {
+    try {
+      await logoutApiCall().unwrap();
+      dispatch(logout());
+      navigate("/login");
+      toast.success("Logged out");
+    } catch (error) {
+      toast.error(error?.data?.message || error.message);
+    }
+  };
+
+  return (
+    <div
+      style={{ zIndex: 999 }}
+      className={`${
+        showSidebar ? "hidden" : "flex"
+      } xl:flex lg:flex md:hidden sm:hidden flex-col justify-between p-4 text-white bg-black  w-[4%] hover:w-[15%] h-[100vh] fixed`}
+      id="navigation-container"
+    >
+      <div className="flex flex-col justify-center space-y-4">
+        <Link
+          to="/"
+          className="flex items-center transition-transform transform hover:translate-x-2"
+        >
+          <AiOutlineHome className="mr-2 mt-[3rem]" size={20} />
+          <span className="hidden nav-item-name mt-[3rem]">HOME</span>
+        </Link>{" "}
+        <Link
+          to="/shop"
+          className="flex items-center transition-transform transform hover:translate-x-2"
+        >
+          <AiOutlineShopping className="mr-2 mt-[3rem]" size={20} />
+          <span className="hidden nav-item-name mt-[3rem]">SHOP</span>
+        </Link>{" "}
+        <Link
+          to="/cart"
+          className="flex items-center transition-transform transform hover:translate-x-2"
+        >
+          <AiOutlineShoppingCart className="mr-2 mt-[3rem]" size={20} />
+          <span className="hidden nav-item-name mt-[3rem]">CART</span>
+        </Link>{" "}
+        <Link
+          to="/favorite"
+          className="flex items-center transition-transform transform hover:translate-x-2"
+        >
+          <FaHeart className="mr-2 mt-[3rem]" size={20} />
+          <span className="hidden nav-item-name mt-[3rem]">FAVORITE</span>
+        </Link>
+      </div>
+      <div className="relative">
+        <button
+          onClick={toggleDropdown}
+          className="flex items-center text-white focus:outline-none"
+        >
+          {userInfo ? (
+            <div className="flex flex-row w-full justify-between items-center">
+              {userInfo.isAdmin ? <FaUser size={20} /> : <></>}
+              <h2 className="hidden nav-item-name ml-2">{userInfo.username}</h2>
+            </div>
+          ) : (
+            <></>
+          )}
+        </button>
+        {dropDownOpen && userInfo && (
+          <ul
+            className={`absolute right-0 mt-2 mr-14 space-y-2 bg-gray-900 text-white rounded-lg text-semibold ${
+              !userInfo.isAdmin ? "-top-20" : "-top-80"
+            }`}
+          >
+            {userInfo.isAdmin && (
+              <>
+                <li>
+                  <Link
+                    to="/admin/dashboard"
+                    className="block px-4 py-2 hover:bg-gray-400 rounded-lg "
+                  >
+                    Dashboard
+                  </Link>
+                </li>{" "}
+                <li>
+                  <Link
+                    to="/admin/allproductslist"
+                    className="block px-4 py-2  hover:bg-gray-400 rounded-lg  "
+                  >
+                    Products
+                  </Link>
+                </li>{" "}
+                <li>
+                  <Link
+                    to="/admin/categorylist"
+                    className="block px-4 py-2  hover:bg-gray-400 rounded-lg "
+                  >
+                    Category
+                  </Link>
+                </li>{" "}
+                <li>
+                  <Link
+                    to="/admin/userlist"
+                    className="block px-4 py-2  hover:bg-gray-400 rounded-lg"
+                  >
+                    Users
+                  </Link>
+                </li>{" "}
+                <li>
+                  <Link
+                    to="/admin/list"
+                    className="block px-4 py-2  hover:bg-gray-400 rounded-lg "
+                  >
+                    Orders
+                  </Link>
+                </li>{" "}
+              </>
+            )}
+            <li>
+              <Link
+                to="/profile"
+                className="block px-4 py-2  hover:bg-gray-400 rounded-lg"
+              >
+                Profile
+              </Link>
+            </li>{" "}
+            <li>
+              <button
+                onClick={logoutHandler}
+                className="block w-full px-4 py-2 text-left hover:bg-gray-400 rounded-lg"
+              >
+                Logout
+              </button>
+            </li>
+          </ul>
+        )}
+      </div>
+      {!userInfo && (
+        <ul>
+          <li>
+            <Link
+              to="/login"
+              className="flex items-center transition-transform transform hover:translate-x-2"
+            >
+              <AiOutlineLogin className="mr-2 mt-[3rem]" size={20} />
+              <span className="hidden nav-item-name mt-[3rem]">LOGIN</span>
+            </Link>
+            <Link
+              to="/register"
+              className="flex items-center transition-transform transform hover:translate-x-2"
+            >
+              <AiOutlineUserAdd className="mr-2 mt-[3rem]" size={20} />
+              <span className="hidden nav-item-name mt-[3rem]">REGISTER</span>
+            </Link>
+          </li>
+        </ul>
+      )}
+    </div>
+  );
+};
+
+export default Navigation;
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import Loader from "../../components/Loader";
+import { setCredentials } from "../../redux/features/auth/authSlice";
+import { toast } from "react-toastify";
+import { useRegisterMutation } from "../../redux/api/userApiSlice";
+const Register = () => {
+  const [username, setusername] = useState("");
+  const [email, setemail] = useState("");
+  const [password, setpassword] = useState("");
+  const [confirmPassword, setconfirmPassword] = useState("");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const [register, { isLoading }] = useRegisterMutation();
+  const { userInfo } = useSelector((state) => state.auth);
+
+  const { search } = useLocation();
+  const sp = new URLSearchParams(search);
+  const redirect = sp.get("redirect") || "/";
+
+  useEffect(() => {
+    if (userInfo) {
+      navigate(register);
+    }
+  }, [navigate, redirect, userInfo]);
+
+  const submitHandler = async (e) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+    } else {
+      try {
+        const res = await register({ username, email, password }).unwrap();
+        dispatch(setCredentials({ ...res }));
+        navigate(redirect);
+        toast.success("User Registration Succesfull");
+      } catch (error) {
+        toast.error(error?.data?.message || error.message);
+      }
+    }
+  };
+
+  return (
+    <section className="pl-[10rem] flex flex-wrap">
+      <div className="mr-[4rem] mt-[5rem]">
+        <h1 className="text-2xl font-semibold mb-4">Register</h1>
+        <form onSubmit={submitHandler} className="container w-[40rem]">
+          <div className="my-[2rem] ">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-black"
+            >
+              Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              className="mt-1 p-2 border rounded w-full  bg-slate-200"
+              placeholder="Enter name"
+              value={username}
+              onChange={(e) => setusername(e.target.value)}
+            />
+          </div>{" "}
+          <div className="my-[2rem] ">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-black"
+            >
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              className="mt-1 p-2 border rounded w-full  bg-slate-200"
+              placeholder="Enter email"
+              value={email}
+              onChange={(e) => setemail(e.target.value)}
+            />
+          </div>{" "}
+          <div className="my-[2rem] ">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-black"
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              className="mt-1 p-2 border rounded w-full  bg-slate-200"
+              placeholder="Enter password"
+              value={password}
+              onChange={(e) => setpassword(e.target.value)}
+            />
+          </div>{" "}
+          <div className="my-[2rem] ">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-black"
+            >
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              className="mt-1 p-2 border rounded w-full  bg-slate-200"
+              placeholder="Re-enter password"
+              value={confirmPassword}
+              onChange={(e) => setconfirmPassword(e.target.value)}
+            />
+          </div>
+          <button
+            disabled={isLoading}
+            type="submit"
+            className="bg-pink-500 text-white px-4 py-2 rounded cursor-pointer my-[1rem]"
+          >
+            {isLoading ? "Registering..." : "Register"}
+          </button>
+          {isLoading && <Loader />}
+        </form>
+        <div className="mt-4">
+          <p className="text-black">
+            Already have account ?{" "}
+            <Link to={redirect ? `/login?redirect=${redirect}` : "/login"}>
+              <span className="text-pink-500 hover:underline">login</span>
+            </Link>
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default Register;
+import { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { toast } from "react-toastify";
+import Loader from "../../components/Loader";
+import { Link } from "react-router-dom";
+import { useProfileMutation } from "../../redux/api/userApiSlice";
+import { setCredentials } from "../../redux/features/auth/authSlice";
+const Profile = () => {
+  const [username, setusername] = useState("");
+  const [email, setemail] = useState("");
+  const [oldPassword, setoldPassword] = useState("");
+  const [password, setpassword] = useState("");
+  const [confrimpassword, setconfrimpassword] = useState("");
+
+  const { userInfo } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+
+  const [updatedProfile, { isLoading: loadingUpdateProfile }] =
+    useProfileMutation();
+
+  useEffect(() => {
+    setusername(userInfo.username);
+    setemail(userInfo.email);
+  }, [userInfo.username, userInfo.email]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (password !== confrimpassword) {
+      toast.error("Passwords do not match");
+    } else {
+      try {
+        const res = await updatedProfile({
+          _id: userInfo._id,
+          username,
+          email,
+          password,
+          oldPassword,
+        }).unwrap();
+        dispatch(setCredentials({ ...res }));
+        toast.success("Updated Successfully");
+      } catch (error) {
+        toast.error(error?.data?.message || error.message);
+      }
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-4 mt-[2rem]">
+      <div className="flex justify-center align-center md:flex md:space-x-4">
+        <div className="w-[40rem]">
+          <h2 className="text-2xl font-semibold mb-4 text-black">
+            Update profile
+          </h2>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-black mb-2">Name</label>
+              <input
+                type="text"
+                placeholder="Enter name"
+                className="form-input p-4 rounded-sm w-full text-black border  bg-slate-200"
+                value={username}
+                onChange={(e) => setusername(e.target.value)}
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-black mb-2">Email</label>
+              <input
+                type="email"
+                placeholder="Enter email"
+                className="form-input p-4 rounded-sm w-full text-black border  bg-slate-200"
+                value={email}
+                onChange={(e) => setemail(e.target.value)}
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-pink-500 text-white font-semibold px-4  py-2 rounded mb-4"
+            >
+              {loadingUpdateProfile ? "Upadating.." : "Update"}
+            </button>
+            <hr />
+            <h2 className="text-3lg font-semibold mb-4 mt-4 text-black">
+              Change Password
+            </h2>
+            <div className="mb-4">
+              <label className="block text-black mb-2">Current password</label>
+              <input
+                type="password"
+                placeholder="Enter current password"
+                className="form-input p-4 rounded-sm w-full text-black border  bg-slate-200"
+                value={oldPassword}
+                onChange={(e) => setoldPassword(e.target.value)}
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-black mb-2">New password</label>
+              <input
+                type="password"
+                placeholder="Enter new password"
+                className="form-input p-4 rounded-sm w-full text-black border  bg-slate-200"
+                value={password}
+                onChange={(e) => setpassword(e.target.value)}
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-black mb-2">Confirm password</label>
+              <input
+                type="password"
+                placeholder="Re-enter password"
+                className="form-input p-4 rounded-sm w-full text-black border bg-slate-200"
+                value={confrimpassword}
+                onChange={(e) => setconfrimpassword(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-between">
+              <button
+                type="submit"
+                className="bg-pink-500 text-white font-semibold px-4  py-2 rounded"
+              >
+                {loadingUpdateProfile ? "Upadating.." : "Change"}
+              </button>
+              <Link
+                to="users/orders"
+                className="bg-pink-500 text-white font-semibold px-4  py-2 rounded"
+              >
+                My Orders
+              </Link>
+            </div>
+          </form>
+        </div>
+        {loadingUpdateProfile && <Loader></Loader>}
+      </div>
+    </div>
+  );
+};
+
+export default Profile;
+import { fetchBaseQuery, createApi } from "@reduxjs/toolkit/query/react";
+import { BASE_URL } from "../features/constants";
+
+const baseQuery = fetchBaseQuery({ baseUrl: BASE_URL });
+
+export const apiSlice = createApi({
+  baseQuery,
+  tagTypes: ["Product", "Order", "User", "Category"],
+  endpoints: () => ({}),
+});
+import { apiSlice } from "./apiSlice";
+import { CATEGORY_URL } from "../features/constants";
+export const categorySlice = apiSlice.injectEndpoints({
+  endpoints: (builder) => ({
+    createCategory: builder.mutation({
+      query: (newCategory) => ({
+        url: `${CATEGORY_URL}`,
+        method: "POST",
+        body: newCategory,
+      }),
+    }),
+    updateCategory: builder.mutation({
+      query: ({ categoryId, updatedCategory }) => ({
+        url: `${CATEGORY_URL}/${categoryId}`,
+        method: "PUT",
+        body: updatedCategory,
+      }),
+    }),
+    removeCategory: builder.mutation({
+      query: ({ categoryId }) => ({
+        url: `${CATEGORY_URL}/${categoryId}`,
+        method: "DELETE",
+      }),
+    }),
+    listCategory: builder.query({
+      query: () => ({
+        url: `${CATEGORY_URL}/list`,
+      }),
+    }),
+  }),
+});
+
+export const {
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useRemoveCategoryMutation,
+  useListCategoryQuery,
+} = categorySlice;
+import { apiSlice } from "./apiSlice";
+import { PRODUCT_URL, UPLOAD_URL } from "../features/constants";
+export const productApiSlice = apiSlice.injectEndpoints({
+  endpoints: (builder) => ({
+    getProducts: builder.query({
+      query: (keyword) => ({
+        url: `${PRODUCT_URL}/`,
+        params: { keyword },
+      }),
+      keepUnusedDataFor: 5,
+      providesTags: ["Product"],
+    }),
+
+    getProductbyID: builder.query({
+      query: (productId) => `${PRODUCT_URL}/${productId}`,
+      providesTags: (result, error, productId) => [
+        {
+          type: "Product",
+          id: productId,
+        },
+      ],
+    }),
+
+    allProducts: builder.query({
+      query: () => `${PRODUCT_URL}/allproducts`,
+    }),
+
+    getProductDetails: builder.query({
+      query: (productId) => `${PRODUCT_URL}/${productId}`,
+      keepUnusedDataFor: 5,
+    }),
+
+    createProduct: builder.mutation({
+      query: (productData) => ({
+        url: `${PRODUCT_URL}/`,
+        method: "POST",
+        body: productData,
+      }),
+      invalidatesTags: ["Product"],
+    }),
+
+    updateProduct: builder.mutation({
+      query: ({ productId, formData }) => ({
+        url: `${PRODUCT_URL}/${productId}`,
+        method: "PUT",
+        body: formData,
+      }),
+    }),
+
+    uploadProductImage: builder.mutation({
+      query: (data) => ({
+        url: `${UPLOAD_URL}`,
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    deleteProduct: builder.mutation({
+      query: ({ productId }) => ({
+        url: `${PRODUCT_URL}/${productId}`,
+        method: "DELETE",
+      }),
+      providesTags: ["Product"],
+    }),
+
+    createReview: builder.mutation({
+      query: ({ data }) => ({
+        url: `${PRODUCT_URL}/${data.productId}/reviews`,
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    getTopProducts: builder.query({
+      query: () => `${PRODUCT_URL}/top`,
+      keepUnusedDataFor: 5,
+    }),
+
+    getNewProducts: builder.query({
+      query: () => `${PRODUCT_URL}/new`,
+      keepUnusedDataFor: 5,
+    }),
+  }),
+});
+
+export const {
+  useGetProductsQuery,
+  useGetProductbyIDQuery,
+  useAllProductsQuery,
+  useGetProductDetailsQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation,
+  useCreateReviewMutation,
+  useGetTopProductsQuery,
+  useGetNewProductsQuery,
+  useUploadProductImageMutation,
+} = productApiSlice;
+import { apiSlice } from "./apiSlice";
+import { USERS_URL } from "../features/constants";
+export const userApiSlice = apiSlice.injectEndpoints({
+  endpoints: (builder) => ({
+    login: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/auth`,
+        method: "POST",
+        body: data,
+      }),
+    }),
+    logout: builder.mutation({
+      query: () => ({
+        url: `${USERS_URL}/logout`,
+        method: "POST",
+      }),
+    }),
+    register: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/`,
+        method: "POST",
+        body: data,
+      }),
+    }),
+    profile: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/profile`,
+        method: "PUT",
+        body: data,
+      }),
+    }),
+    getUsers: builder.query({
+      query: () => ({
+        url: `${USERS_URL}/`,
+      }),
+      providesTags: ["User"],
+      keepUsedDataFor: 5,
+    }),
+    deleteUser: builder.mutation({
+      query: (userId) => ({
+        url: `${USERS_URL}/${userId}`,
+        method: "DELETE",
+      }),
+    }),
+    getuserDetails: builder.query({
+      query: (userId) => ({
+        url: `${USERS_URL}/${userId}`,
+      }),
+      keepUnusedDataFor: 5,
+    }),
+    updateUser: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/${data.userId}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["User"],
+    }),
+  }),
+});
+
+export const {
+  useLoginMutation,
+  useLogoutMutation,
+  useRegisterMutation,
+  useProfileMutation,
+  useDeleteUserMutation,
+  useGetUsersQuery,
+  useGetuserDetailsQuery,
+  useUpdateUserMutation,
+} = userApiSlice;
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+  userInfo: localStorage.getItem("userInfo")
+    ? JSON.parse(localStorage.getItem("userInfo"))
+    : null,
+};
+const authSlice = createSlice({
+  name: "auth",
+  initialState,
+  reducers: {
+    setCredentials: (state, action) => {
+      state.userInfo = action.payload;
+      localStorage.setItem("userInfo", JSON.stringify(action.payload));
+      const expirationTime = new Date().getTime() + 30 * 24 * 60 * 60 * 1000;
+      localStorage.setItem("expirationTime", expirationTime);
+    },
+    logout: (state) => {
+      state.userInfo = null;
+      localStorage.clear();
+    },
+  },
+});
+
+export const { setCredentials, logout } = authSlice.actions;
+export default authSlice.reducer;
+export const BASE_URL = "";
+export const USERS_URL = "/api/users";
+export const CATEGORY_URL = "/api/category";
+export const PRODUCT_URL = "/api/products";
+export const UPLOAD_URL = "/api/upload";
+import { configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query/react";
+import { apiSlice } from "../api/apiSlice";
+import authReducer from "../features/auth/authSlice";
+const store = configureStore({
+  reducer: {
+    [apiSlice.reducerPath]: apiSlice.reducer,
+    auth: authReducer,
+  },
+  middleware: (getDefaultmiddleware) =>
+    getDefaultmiddleware().concat(apiSlice.middleware),
+  devTools: true,
+});
+
+setupListeners(store.dispatch);
+export default store;
+import { Outlet } from "react-router-dom";
+import Navigation from "./pages/auth/Navigation";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/ReactToastify.css";
+
+const App = () => {
+  return (
+    <>
+      <ToastContainer />
+      <Navigation />
+      <main className="py-3">
+        <Outlet />
+      </main>
+    </>
+  );
+};
+
+export default App;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";
+import "./index.css";
+import { Route, RouterProvider, createRoutesFromElements } from "react-router";
+import { createBrowserRouter } from "react-router-dom";
+import { Provider } from "react-redux";
+import store from "../src/redux/features/store.js";
+// Private Route
+import PrivateRoute from "./components/PrivateRoute.jsx";
+import Profile from "./pages/user/Profile.jsx";
+
+// Admin route
+import AdminRoutes from "./pages/admin/AdminRoutes.jsx";
+import UserList from "./pages/admin/UserList.jsx";
+import CategoryList from "./pages/admin/CategoryList.jsx";
+import ProductList from "./pages/admin/ProductList.jsx";
+import ProductUpdate from "./pages/admin/ProductUpdate.jsx";
+import AllProducts from "./pages/admin/AllProducts.jsx";
+
+// Auth
+import Login from "./pages/auth/Login.jsx";
+import Register from "./pages/auth/Register.jsx";
+
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route path="/" element={<App />}>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
+      <Route path="/" element={<PrivateRoute />}>
+        <Route path="/profile" element={<Profile />} />
+      </Route>
+
+      <Route path="/admin" element={<AdminRoutes />}>
+        <Route path="userlist" element={<UserList />} />
+        <Route path="categorylist" element={<CategoryList />} />
+        <Route path="addproduct" element={<ProductList />} />
+        <Route path="allproductslist" element={<AllProducts />} />
+        <Route path="productlist/:pagenumber" element={<ProductList />} />
+        <Route path="product/update/:id" element={<ProductUpdate />} />
+      </Route>
+    </Route>
+  )
+);
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <Provider store={store}>
+    <RouterProvider router={router} />
+  </Provider>
+);
+
